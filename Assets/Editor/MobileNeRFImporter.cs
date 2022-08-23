@@ -5,37 +5,50 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Unity.Collections;
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using static WebRequestAsyncUtility;
 
-public class MobileNeRFImporter {
-
+public class MobileNeRFImporter : MonoBehaviour
+{
     private static readonly string DownloadTitle = "Downloading Assets";
     private static readonly string DownloadInfo = "Downloading Assets for ";
     private static readonly string DownloadAllTitle = "Downloading All Assets";
     private static readonly string DownloadAllMessage = "You are about to download all the demo scenes from the MobileNeRF paper!\nDownloading/Processing might take a few minutes and take ~3.3GB of disk space.\n\nClick 'OK', if you wish to continue.";
 
-    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360° scenes --", false, -1)]
+    // Start is called before the first frame update
+    void Start()
+    {
+
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+
+    }
+
+    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
     public static void Separator0() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360° scenes --", true, -1)]
+    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
     public static bool Separator0Validate() {
         return false;
     }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --", false, 49)]
+    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
     public static void Separator1() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --", true, 49)]
+    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
     public static bool Separator1Validate() {
         return false;
     }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360° scenes --", false, 99)]
+    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
     public static void Separator2() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360° scenes --", true, 99)]
+    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
     public static bool Separator2Validate() {
         return false;
     }
 
-    [MenuItem("MobileNeRF/Asset Downloads/Download All", false, -20)]
+    [MenuItem("MobileNeRF/Asset Downloads/Download All")]
     public static async void DownloadAllAssets() {
         if (!EditorUtility.DisplayDialog(DownloadAllTitle, DownloadAllMessage, "OK")) {
             return;
@@ -47,79 +60,79 @@ public class MobileNeRFImporter {
     }
 
 #pragma warning disable CS4014
-    [MenuItem("MobileNeRF/Asset Downloads/Chair", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Chair")]
     public static void DownloadChairAssets() {
         ImportAssetsAsync("chair");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Drums", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Drums")]
     public static void DownloadDrumsAssets() {
         ImportAssetsAsync("drums");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Ficus", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Ficus")]
     public static void DownloadFicusAssets() {
         ImportAssetsAsync("ficus");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Hotdog", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Hotdog")]
     public static void DownloadHotdogAssets() {
         ImportAssetsAsync("hotdog");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Lego", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Lego")]
     public static void DownloadLegoAssets() {
         ImportAssetsAsync("lego");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Materials", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Materials")]
     public static void DownloadMaterialsAssets() {
         ImportAssetsAsync("materials");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Mic", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Mic")]
     public static void DownloadMicAssets() {
         ImportAssetsAsync("mic");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Ship", false, 0)]
+    [MenuItem("MobileNeRF/Asset Downloads/Ship")]
     public static void DownloadShipsAssets() {
         ImportAssetsAsync("ship");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Fern", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Fern")]
     public static void DownloadFernAssets() {
         ImportAssetsAsync("fern");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Flower", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Flower")]
     public static void DownloadFlowerAssets() {
         ImportAssetsAsync("flower");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Fortress", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Fortress")]
     public static void DownloadFortressAssets() {
         ImportAssetsAsync("fortress");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Horns", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Horns")]
     public static void DownloadHornsAssets() {
         ImportAssetsAsync("horns");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Leaves", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Leaves")]
     public static void DownloadLeavesAssets() {
         ImportAssetsAsync("leaves");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Orchids", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Orchids")]
     public static void DownloadOrchidsAssets() {
         ImportAssetsAsync("orchids");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Room", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Room")]
     public static void DownloadRoomAssets() {
         ImportAssetsAsync("room");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Trex", false, 50)]
+    [MenuItem("MobileNeRF/Asset Downloads/Trex")]
     public static void DownloadTrexAssets() {
         ImportAssetsAsync("trex");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Bicycle", false, 100)]
+    [MenuItem("MobileNeRF/Asset Downloads/Bicycle")]
     public static void DownloadBicycleAssets() {
         ImportAssetsAsync("bicycle");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Garden Vase", false, 100)]
+    [MenuItem("MobileNeRF/Asset Downloads/Garden Vase")]
     public static void DownloadGardenAssets() {
         ImportAssetsAsync("gardenvase");
     }
-    [MenuItem("MobileNeRF/Asset Downloads/Stump", false, 100)]
+    [MenuItem("MobileNeRF/Asset Downloads/Stump")]
     public static void DownloadStumpAssets() {
         ImportAssetsAsync("stump");
     }
@@ -489,7 +502,7 @@ public static class MNeRFSceneExtensions {
             case MNeRFScene.Materials:
             case MNeRFScene.Mic:
             case MNeRFScene.Ship:
-                // Synthetic 360° scenes
+                // Synthetic 360? scenes
                 return "o.rayDirection.xz = -o.rayDirection.xz;" +
                        "o.rayDirection.xyz = o.rayDirection.xzy;";
             case MNeRFScene.Fern:
@@ -505,7 +518,7 @@ public static class MNeRFSceneExtensions {
             case MNeRFScene.Bicycle:
             case MNeRFScene.Gardenvase:
             case MNeRFScene.Stump:
-                // Unbounded 360° scenes
+                // Unbounded 360? scenes
                 return "o.rayDirection.xz = -o.rayDirection.xz;" +
                        "o.rayDirection.xyz = o.rayDirection.xzy;";
 
