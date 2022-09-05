@@ -29,24 +29,24 @@ public class MobileNeRFImporter : MonoBehaviour
 
     }
 
-    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
-    public static void Separator0() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
-    public static bool Separator0Validate() {
-        return false;
-    }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
-    public static void Separator1() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
-    public static bool Separator1Validate() {
-        return false;
-    }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
-    public static void Separator2() { }
-    [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
-    public static bool Separator2Validate() {
-        return false;
-    }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
+    // public static void Separator0() { }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Synthetic 360 scenes --")]
+    // public static bool Separator0Validate() {
+    //     return false;
+    // }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
+    // public static void Separator1() { }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Forward-facing scenes --")]
+    // public static bool Separator1Validate() {
+    //     return false;
+    // }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
+    // public static void Separator2() { }
+    // [MenuItem("MobileNeRF/Asset Downloads/-- Unbounded 360 scenes --")]
+    // public static bool Separator2Validate() {
+    //     return false;
+    // }
 
     [MenuItem("MobileNeRF/Asset Downloads/Download All")]
     public static async void DownloadAllAssets() {
