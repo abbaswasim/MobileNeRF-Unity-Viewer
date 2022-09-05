@@ -1,13 +1,11 @@
 public static class ViewDependenceNetworkShader {
-    public const string Template = @"Shader ""MobileNeRF/ViewDependenceNetworkShader/OBJECT_NAME"" {
+    public const string Template_Deferred = @"Shader ""MobileNeRF/ViewDependenceNetworkShader/OBJECT_NAME"" {
     Properties {
         tDiffuse0x (""Diffuse Texture 0"", 2D) = ""white"" {}
         tDiffuse1x (""Diffuse Texture 1"", 2D) = ""white"" {}
-        weightsZero (""Weights Zero"", 2D) = ""white"" {}
-        weightsOne (""Weights One"", 2D) = ""white"" {}
-        weightsTwo (""Weights Two"", 2D) = ""white"" {}
     }
     SubShader {
+		Tags { ""LightMode"" = ""Deferred"" }
         Cull Off
         ZTest LEqual
 
@@ -42,7 +40,78 @@ public static class ViewDependenceNetworkShader {
 
             sampler2D tDiffuse0x;
             sampler2D tDiffuse1x;
-            sampler2D tDiffuse2x;
+
+			struct FragmentOutput
+			{
+					float4 gBuffer0 : SV_Target0;
+					float4 gBuffer1 : SV_Target1;
+					float4 gBuffer2 : SV_Target2;
+			};
+
+            FragmentOutput frag (v2f i) 
+			{
+                fixed4 diffuse0 = tex2D( tDiffuse0x, i.uv );
+                if (diffuse0.r == 0.0) discard;
+                fixed4 diffuse1 = tex2D( tDiffuse1x, i.uv );
+                fixed4 rayDir = fixed4(normalize(i.rayDirection), 1.0);
+
+                //deal with iphone
+                diffuse0.a = diffuse0.a*2.0-1.0;
+                diffuse1.a = diffuse1.a*2.0-1.0;
+                rayDir.a = rayDir.a*2.0-1.0;
+
+				FragmentOutput output;
+
+				output.gBuffer0 = diffuse0;
+				output.gBuffer1 = diffuse1;
+				output.gBuffer2 = rayDir;
+
+                return output;
+            }
+            ENDCG
+        }
+    }
+}";
+
+    public const string Template_Resolve = @"Shader ""MobileNeRF/ViewDependenceNetworkShader/OBJECT_NAME"" {
+    Properties {
+        weightsZero (""Weights Zero"", 2D) = ""white"" {}
+        weightsOne (""Weights One"", 2D) = ""white"" {}
+        weightsTwo (""Weights Two"", 2D) = ""white"" {}
+    }
+    SubShader {
+        Cull Off
+        ZTest LEqual
+
+        Pass {
+            CGPROGRAM
+
+            #pragma vertex vert
+            #pragma fragment frag
+
+            #include ""UnityCG.cginc""
+
+            struct appdata {
+                float4 vertex : POSITION;
+                float2 uv : TEXCOORD0;
+            };
+
+            struct v2f {
+                float2 uv : TEXCOORD0;
+                float4 vertex : SV_POSITION;
+            };
+
+            v2f vert (appdata v) {
+                v2f o;
+                o.vertex = v.vertex;
+                o.uv = v.uv;
+
+                return o;
+            }
+
+            sampler2D _GBuffer0;
+            sampler2D _GBuffer1;
+            sampler2D _GBuffer2;
 
             UNITY_DECLARE_TEX2D(weightsZero);
             UNITY_DECLARE_TEX2D(weightsOne);
@@ -104,23 +173,39 @@ public static class ViewDependenceNetworkShader {
                             result[2]*viewdir.a+(1.0-viewdir.a));
             }
 
-            fixed4 frag (v2f i) : SV_Target {
-                fixed4 diffuse0 = tex2D( tDiffuse0x, i.uv );
+			struct FragmentOutput
+			{
+					float4 gBuffer0 : SV_Target0;
+					float4 gBuffer1 : SV_Target1;
+					float4 gBuffer2 : SV_Target2;
+					float4 gBuffer3 : SV_Target3;
+			};
+
+            FragmentOutput frag (v2f i) {
+                fixed4 diffuse0 = tex2D( _GBuffer0, i.uv );
                 if (diffuse0.r == 0.0) discard;
-                fixed4 diffuse1 = tex2D( tDiffuse1x, i.uv );
-                fixed4 rayDir = fixed4(normalize(i.rayDirection), 1.0);
+                fixed4 diffuse1 = tex2D( _GBuffer1, i.uv );
+                fixed4 rayDir = fixed4(normalize(tex2D( _GBuffer2, i.uv )).rgb, 1.0);
 
-                //deal with iphone
-                diffuse0.a = diffuse0.a*2.0-1.0;
-                diffuse1.a = diffuse1.a*2.0-1.0;
-                rayDir.a = rayDir.a*2.0-1.0;
-
-                //pc_FragColor.rgb  = diffuse1.rgb;
                 fixed4 fragColor;
-                fragColor.rgb = evaluateNetwork(diffuse0,diffuse1,rayDir);
+                fragColor.rgb = evaluateNetwork(diffuse0, diffuse1, rayDir);
                 fragColor.a = 1.0;
 
-                return fragColor;
+				FragmentOutput output;
+
+				// Unity's gbuffer format
+                // RT0, ARGB32 format: Diffuse color (RGB), occlusion (A).
+				// RT1, ARGB32 format: Specular color (RGB), smoothness (A).
+				// RT2, ARGB2101010 format: World space normal (RGB), unused (A).
+				// RT3, ARGB2101010 (non-HDR) or ARGBHalf (HDR) format: Emission + lighting + lightmaps + reflection probes buffer.
+				// Depth+Stencil buffer
+
+				output.gBuffer0 = fixed4(0.0, 0.0, 0.0, 0.0);
+				output.gBuffer1 = fixed4(0.0, 0.0, 0.0, 0.0);
+				output.gBuffer2 = fixed4(0.0, 0.0, 0.0, 0.0);
+				output.gBuffer3 = fragColor;
+
+                return output;
             }
             ENDCG
         }

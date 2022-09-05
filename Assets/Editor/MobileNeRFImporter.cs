@@ -8,7 +8,9 @@ using Unity.Collections;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.Assertions;
 using static WebRequestAsyncUtility;
+
 
 public class MobileNeRFImporter : MonoBehaviour
 {
@@ -192,10 +194,19 @@ public class MobileNeRFImporter : MonoBehaviour
         Directory.CreateDirectory(Path.GetDirectoryName(path));
         return path;
     }
+    private static string GetResolveShaderAssetPath(string objName) {
+        string path = $"{GetBasePath(objName)}/Shaders/{objName}_resolve_shader.shader";
+        Directory.CreateDirectory(Path.GetDirectoryName(path));
+        return path;
+    }
 
     private static string GetDefaultMaterialAssetPath(string objName, int i, int j) {
         string path = $"{GetBasePath(objName)}/OBJs/Materials/shape{i}_{j}-defaultMat.mat";
         Directory.CreateDirectory(Path.GetDirectoryName(path));
+        return path;
+    }
+    private static string GetResolveMaterialAssetPath(string objName) {
+        string path = $"{GetBasePath(objName)}/OBJs/Materials/shape0-defaultMat.mat";
         return path;
     }
     private static string GetPrefabAssetPath(string objName) {
@@ -268,6 +279,7 @@ public class MobileNeRFImporter : MonoBehaviour
             AssetDatabase.ImportAsset(feat1AssetPath);
 
             AssetDatabase.SaveAssets();
+
         }
     }
 
@@ -291,29 +303,25 @@ public class MobileNeRFImporter : MonoBehaviour
                     continue;
                 }
 
+
                 byte[] objData = await BinaryHttpRequestAsync(objUrl, HTTPVerb.GET);
                 File.WriteAllBytes(objAssetPath, objData);
                 AssetDatabase.Refresh();
+
 
                 ModelImporter modelImport = AssetImporter.GetAtPath(objAssetPath) as ModelImporter;
                 modelImport.materialLocation = ModelImporterMaterialLocation.External;
                 modelImport.materialName = ModelImporterMaterialName.BasedOnModelNameAndMaterialName;
                 AssetDatabase.ImportAsset(objAssetPath);
 
-                // create material
+
+                // create deferred material
                 string shaderAssetPath = GetShaderAssetPath(objName);
                 Shader mobileNeRFShader = AssetDatabase.LoadAssetAtPath<Shader>(shaderAssetPath);
                 string materialAssetPath = GetDefaultMaterialAssetPath(objName, i, j);
                 Material material = AssetDatabase.LoadAssetAtPath<Material>(materialAssetPath);
                 material.shader = mobileNeRFShader;
                 //material.name = $"defaultMat_{i}_{j}";
-
-                Texture2D weightsTexZero = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 0));
-                Texture2D weightsTexOne  = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 1));
-                Texture2D weightsTexTwo  = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 2));
-                material.SetTexture("weightsZero", weightsTexZero);
-                material.SetTexture("weightsOne", weightsTexOne);
-                material.SetTexture("weightsTwo", weightsTexTwo);
 
                 string feat0AssetPath = GetFeatureTextureAssetPath(objName, i, 0);
                 string feat1AssetPath = GetFeatureTextureAssetPath(objName, i, 1);
@@ -322,12 +330,15 @@ public class MobileNeRFImporter : MonoBehaviour
                 material.SetTexture("tDiffuse0x", featureTex1);
                 material.SetTexture("tDiffuse1x", featureTex2);
 
+
                 GameObject obj = AssetDatabase.LoadAssetAtPath<GameObject>(objAssetPath);
                 obj.GetComponentInChildren<MeshRenderer>().sharedMaterial = material;
+
 
                 /*string defaultMaterialAssetPath = $"{GetBasePath(objName)}/Materials/{material.name}.mat";
                 AssetDatabase.CreateAsset(material, defaultMaterialAssetPath);
                 AssetDatabase.SaveAssets();*/
+
 
             }
         }
@@ -348,25 +359,37 @@ public class MobileNeRFImporter : MonoBehaviour
         int channelsTwo   = mlp._1Bias.Length;
         int channelsThree = mlp._2Bias.Length;
 
-        string shaderSource = ViewDependenceNetworkShader.Template;
-        shaderSource = new Regex("OBJECT_NAME"       ).Replace(shaderSource, $"{objName}");
-        shaderSource = new Regex("NUM_CHANNELS_ZERO" ).Replace(shaderSource, $"{channelsZero}");
-        shaderSource = new Regex("NUM_CHANNELS_ONE"  ).Replace(shaderSource, $"{channelsOne}");
-        shaderSource = new Regex("NUM_CHANNELS_TWO"  ).Replace(shaderSource, $"{channelsTwo}");
-        shaderSource = new Regex("NUM_CHANNELS_THREE").Replace(shaderSource, $"{channelsThree}");
-        shaderSource = new Regex("BIAS_LIST_ZERO"    ).Replace(shaderSource, $"{biasListZero}");
-        shaderSource = new Regex("BIAS_LIST_ONE"     ).Replace(shaderSource, $"{biasListOne}");
-        shaderSource = new Regex("BIAS_LIST_TWO"     ).Replace(shaderSource, $"{biasListTwo}");
+		// Create deferred shader
+        string shaderSource = ViewDependenceNetworkShader.Template_Deferred;
+        shaderSource = new Regex("OBJECT_NAME").Replace(shaderSource, $"{objName}_deferred");
 
         // hack way to flip axes depending on scene
         string axisSwizzle = MNeRFSceneExtensions.ToEnum(objName).GetAxisSwizzleString();
-        shaderSource = new Regex("AXIS_SWIZZLE"      ).Replace(shaderSource, $"{axisSwizzle}");
+        shaderSource = new Regex("AXIS_SWIZZLE").Replace(shaderSource, $"{axisSwizzle}");
 
         string shaderAssetPath = GetShaderAssetPath(objName);
         File.WriteAllText(shaderAssetPath, shaderSource);
         AssetDatabase.Refresh();
 
         Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderAssetPath);
+
+		// Create resolve shader
+        string resolveShaderSource = ViewDependenceNetworkShader.Template_Resolve;
+        resolveShaderSource = new Regex("OBJECT_NAME"       ).Replace(resolveShaderSource, $"{objName}_resolve");
+        resolveShaderSource = new Regex("NUM_CHANNELS_ZERO" ).Replace(resolveShaderSource, $"{channelsZero}");
+        resolveShaderSource = new Regex("NUM_CHANNELS_ONE"  ).Replace(resolveShaderSource, $"{channelsOne}");
+        resolveShaderSource = new Regex("NUM_CHANNELS_TWO"  ).Replace(resolveShaderSource, $"{channelsTwo}");
+        resolveShaderSource = new Regex("NUM_CHANNELS_THREE").Replace(resolveShaderSource, $"{channelsThree}");
+        resolveShaderSource = new Regex("BIAS_LIST_ZERO"    ).Replace(resolveShaderSource, $"{biasListZero}");
+        resolveShaderSource = new Regex("BIAS_LIST_ONE"     ).Replace(resolveShaderSource, $"{biasListOne}");
+        resolveShaderSource = new Regex("BIAS_LIST_TWO"     ).Replace(resolveShaderSource, $"{biasListTwo}");
+
+        string resolveShaderAssetPath = GetResolveShaderAssetPath(objName);
+        File.WriteAllText(resolveShaderAssetPath, resolveShaderSource);
+        AssetDatabase.Refresh();
+
+        Shader shader_resolve = AssetDatabase.LoadAssetAtPath<Shader>(resolveShaderAssetPath);
+
     }
 
     private static void CreateWeightTextures(string objName, Mlp mlp) {
@@ -377,6 +400,7 @@ public class MobileNeRFImporter : MonoBehaviour
         AssetDatabase.CreateAsset(weightsTexOne,  GetWeightsAssetPath(objName, 1));
         AssetDatabase.CreateAsset(weightsTexTwo,  GetWeightsAssetPath(objName, 2));
         AssetDatabase.SaveAssets();
+
     }
 
     /// <summary>
@@ -431,6 +455,46 @@ public class MobileNeRFImporter : MonoBehaviour
                 GameObject shape = GameObject.Instantiate(shapeModel);
                 shape.name = shape.name.Replace("(Clone)", "");
                 shape.transform.SetParent(prefabObject.transform, false);
+
+				// Lets attach the deferred script to one of the objects, first object sounds good
+				if (i == 0 && j == 0) {
+					// Create resolve material just once for all the parts of the model
+					string resolveShaderAssetPath = GetResolveShaderAssetPath(objName);
+					Shader mobileNeRFResolveShader = AssetDatabase.LoadAssetAtPath<Shader>(resolveShaderAssetPath);
+					string resolveMaterialAssetPath = GetResolveMaterialAssetPath(objName); // Just get the first obj in the first object
+					Material resolveMat = new Material(mobileNeRFResolveShader);
+					AssetDatabase.CreateAsset(resolveMat, resolveMaterialAssetPath);
+					Material resolveMaterial = AssetDatabase.LoadAssetAtPath<Material>(resolveMaterialAssetPath);
+
+					if (!resolveMaterial) {
+						continue;
+					}
+
+					try {
+						Texture2D weightsTexZero = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 0));
+						Texture2D weightsTexOne  = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 1));
+						Texture2D weightsTexTwo  = AssetDatabase.LoadAssetAtPath<Texture2D>(GetWeightsAssetPath(objName, 2));
+						resolveMaterial.SetTexture("weightsZero", weightsTexZero);
+						resolveMaterial.SetTexture("weightsOne", weightsTexOne);
+						resolveMaterial.SetTexture("weightsTwo", weightsTexTwo);
+
+						GameObject child = shape.transform.Find("default").gameObject;
+						if (!child)
+							Debug.Log("Couldn't find default child in game object");
+						else
+						{
+							child.AddComponent<cmd_attach>();
+							cmd_attach cmd_attach_script = (cmd_attach) child.GetComponent<cmd_attach>();
+							cmd_attach_script.m_Material = resolveMaterial;
+						}
+					}
+					catch (Exception e) {
+
+						continue;
+
+					}
+
+				}
             }
         }
         PrefabUtility.SaveAsPrefabAsset(prefabObject, GetPrefabAssetPath(objName));
