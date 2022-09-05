@@ -19,7 +19,6 @@ public class cmd_attach : MonoBehaviour
 			Debug.Log("There is no material assigned");
 		}
 
-
 		buf = new CommandBuffer();
 		buf.name = "Deferred gbuffer";
 

@@ -5,7 +5,7 @@ using UnityEngine;
 // From https://emmaprats.com/p/how-to-rotate-the-camera-around-an-object-in-unity3d/
 public class CameraMovement : MonoBehaviour
 {
-    [SerializeField] private Camera cam;
+	private Camera cam = null;
     // [SerializeField] private Transform target;
     [SerializeField] private float distanceToTarget = 3.0f;
 
@@ -15,8 +15,17 @@ public class CameraMovement : MonoBehaviour
     private float minFov = 10.0f;
     private float maxFov = 100.0f;
 
+	void Start()
+	{
+		if (!cam)
+			cam = Camera.main;
+	}
+
     void Update()
     {
+		if (!cam)
+			return;
+
         if (Input.GetMouseButtonDown(0))
         {
             previousPosition = cam.ScreenToViewportPoint(Input.mousePosition);
